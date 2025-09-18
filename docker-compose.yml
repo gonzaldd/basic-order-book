@@ -1,0 +1,104 @@
+services:
+  api-gateway:
+    image: node:23-alpine
+    container_name: api-gateway
+    working_dir: /usr/src/app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api-gateway:/usr/src/app
+    env_file: .env
+    environment:
+      - NODE_ENV=development
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - API_SERVER_PORT=${API_SERVER_PORT}
+      - RABBITMQ_URI=${RABBITMQ_URI}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+    entrypoint:
+      - sh
+      - -c
+      - |
+        npm install -g pnpm
+        pnpm config set store-dir /home/node/.local/share/pnpm/store
+        pnpm i
+        pnpm run start:dev
+    restart: unless-stopped
+
+  order-service:
+    image: node:23-alpine
+    container_name: order-service
+    working_dir: /usr/src/app
+    volumes:
+      - ./order-service:/usr/src/app
+    env_file: .env
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_DB=${DATABASE_DB}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - RABBITMQ_URI=${RABBITMQ_URI}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+    depends_on:
+      - postgres
+    entrypoint:
+      - sh
+      - -c
+      - |
+        npm install -g pnpm
+        pnpm config set store-dir /home/node/.local/share/pnpm/store
+        pnpm i
+        pnpm run migration:run
+        pnpm run start:dev
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: exchange-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_DB}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+  rabbitmq-service:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq-service
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    hostname: rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+
+volumes:
+  pgdata:
+  rabbitmq-data:
