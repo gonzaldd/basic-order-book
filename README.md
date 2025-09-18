@@ -5,9 +5,9 @@
 Sistema de microservicios para el manejo de órdenes de intercambio de divisas construido con NestJS, PostgreSQL y RabbitMQ. El sistema permite crear, procesar y gestionar órdenes de cambio de monedas con validación de liquidez en tiempo real.
 
 ## 🏗️ Arquitectura del Sistema
-![diagrama](https://raw.githubusercontent.com/gonzaldd/basic-order-book/refs/heads/main/doc/diagram.jpg)
 
 ### Diagrama de Arquitectura
+![diagrama](https://raw.githubusercontent.com/gonzaldd/basic-order-book/refs/heads/main/doc/diagram.jpg)
 
 
 ### Componentes del Sistema
